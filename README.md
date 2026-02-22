@@ -1,2 +1,3 @@
-# timeseries-util
-Timeseries util is a Kotlin based utility library for in-memory handling of timeseries based data
+# Timeseries
+
+Timeseries is a Kotlin based library that provides data structure for in-memory storage and manipulation of timeseries based data
