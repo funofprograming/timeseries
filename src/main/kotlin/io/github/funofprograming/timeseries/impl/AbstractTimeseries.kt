@@ -19,13 +19,6 @@ abstract class AbstractTimeseries<E, S: Set<UUID>, M: Map<UUID, E>>: Timeseries<
     protected abstract fun getTimeseriesStore(): NavigableMap<Instant, S>
     protected abstract fun getTimeseriesEventsStore(): M
 
-    override fun get(eventInstant:Instant, eventId:UUID): TimeseriesEntry<E>? = read {
-        if(getTimeseriesStore()[eventInstant]?.contains(eventId)?:false) {
-            return@read getTimeseriesEventsStore()[eventId]?.let { timeseriesEntryOf(eventInstant, it, eventId) }
-        }
-        return@read null
-    }
-
     override fun get(eventInstant:Instant): Collection<TimeseriesEntry<E>> = read  {
         return@read getEntriesSubMap(eventInstant, true, eventInstant, true)?.get(eventInstant) ?: emptyList()
     }
@@ -35,8 +28,6 @@ abstract class AbstractTimeseries<E, S: Set<UUID>, M: Map<UUID, E>>: Timeseries<
     override fun getAllInstants(): NavigableSet<Instant> = read { getTimeseriesStore().keys.stream().collect(Collectors.toCollection { TreeSet() }) }
 
     override fun contains(eventInstant:Instant): Boolean = read { getTimeseriesStore().contains(eventInstant) }
-
-    override fun contains(eventId:UUID): Boolean = read { getTimeseriesEventsStore().contains(eventId) }
 
     override fun contains(event:E): Boolean = read { getTimeseriesEventsStore().values.contains(event) }
 
@@ -112,6 +103,5 @@ abstract class AbstractTimeseries<E, S: Set<UUID>, M: Map<UUID, E>>: Timeseries<
     }
 
     protected open fun <T> read(action: ()->T): T = action() //passthru
-
     protected open fun <T> write(action: ()->T): T = action() //passthru
 }

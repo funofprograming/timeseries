@@ -3,6 +3,7 @@ package io.github.funofprograming.timeseries.impl
 import io.github.funofprograming.timeseries.MutableTimeseries
 import io.github.funofprograming.timeseries.Timeseries
 import io.github.funofprograming.timeseries.TimeseriesEntry
+import io.github.funofprograming.timeseries.timeseriesEntryOf
 import java.time.Instant
 import java.util.NavigableMap
 import java.util.TreeMap
@@ -30,7 +31,6 @@ open class MutableTimeseriesImpl<E>: AbstractTimeseries<E, MutableSet<UUID>, Mut
 
     constructor(entries:NavigableMap<Instant, Collection<TimeseriesEntry<E>>>) {
         add(entries.values.stream().flatMap { it.stream() }.toList())
-
     }
 
     override fun plus(entry: TimeseriesEntry<E>, overwrite: Boolean): Timeseries<E> {
@@ -54,9 +54,8 @@ open class MutableTimeseriesImpl<E>: AbstractTimeseries<E, MutableSet<UUID>, Mut
     }
 
     override fun minus(eventInstant: Instant): Timeseries<E> {
-        val entriesCurrent = getAll()
-        entriesCurrent.remove(eventInstant)
-        return TimeseriesImpl(entriesCurrent)
+        remove(eventInstant)
+        return this
     }
 
     override fun add(entry: TimeseriesEntry<E>, overwrite: Boolean): UUID = write {
@@ -73,6 +72,13 @@ open class MutableTimeseriesImpl<E>: AbstractTimeseries<E, MutableSet<UUID>, Mut
 
     override fun add(entries: Collection<TimeseriesEntry<E>>,overwrite: Boolean): Collection<UUID> = write {
         return@write entries.stream().map { entry -> add(entry, overwrite) }.toList()
+    }
+
+    override fun get(eventInstant:Instant, eventId:UUID): TimeseriesEntry<E>? = read {
+        if(getTimeseriesStore()[eventInstant]?.contains(eventId)?:false) {
+            return@read getTimeseriesEventsStore()[eventId]?.let { timeseriesEntryOf(eventInstant, it, eventId) }
+        }
+        return@read null
     }
 
     override fun remove(entry: TimeseriesEntry<E>): Boolean = write {
@@ -108,7 +114,8 @@ open class MutableTimeseriesImpl<E>: AbstractTimeseries<E, MutableSet<UUID>, Mut
         timeseriesStore.clear()
     }
 
-    override fun <T> read(action: ()->T):T = readWriteLock.read { action() }
+    override fun contains(eventId:UUID): Boolean = read { getTimeseriesEventsStore().contains(eventId) }
 
+    override fun <T> read(action: ()->T):T = readWriteLock.read { action() }
     override fun <T> write(action: ()->T):T = readWriteLock.write { action() }
 }
