@@ -199,9 +199,16 @@ interface Timeseries<E>: Iterable<Collection<TimeseriesEntry<E>>> {
     fun end(): Collection<TimeseriesEntry<E>>?
 
     /**
+     * Iterator over timeseries in ascending order of instants from earliest (smallest) to latest (largest)
+     *
+     * @return [Iterator]<[Collection]<[TimeseriesEntry]<E>>> returning events corresponding to instants from earliest (smallest) to latest (largest)
+     */
+    override fun iterator(): Iterator<Collection<TimeseriesEntry<E>>>
+
+    /**
      * Iterator over timeseries in descending order of instants from latest (largest) to earliest (smallest)
      *
-     * @return [Iterator]<[Collection]<[TimeseriesEntry]<E>>> returning events corresponding to events from latest (largest) to earliest (smallest)
+     * @return [Iterator]<[Collection]<[TimeseriesEntry]<E>>> returning events corresponding to instants from latest (largest) to earliest (smallest)
      */
     fun descendingIterator(): Iterator<Collection<TimeseriesEntry<E>>>
 }
