@@ -33,27 +33,27 @@ open class MutableTimeseriesImpl<E>: AbstractTimeseries<E, MutableSet<UUID>, Mut
         add(entries.values.stream().flatMap { it.stream() }.toList())
     }
 
-    override fun plus(entry: TimeseriesEntry<E>, overwrite: Boolean): Timeseries<E> {
+    override fun plus(entry: TimeseriesEntry<E>, overwrite: Boolean): MutableTimeseries<E> {
         add(entry, overwrite)
         return this
     }
 
-    override fun plus(entries: Collection<TimeseriesEntry<E>>, overwrite: Boolean): Timeseries<E> {
+    override fun plus(entries: Collection<TimeseriesEntry<E>>, overwrite: Boolean): MutableTimeseries<E> {
         add(entries, overwrite)
         return this
     }
 
-    override fun minus(entry: TimeseriesEntry<E>): Timeseries<E> {
+    override fun minus(entry: TimeseriesEntry<E>): MutableTimeseries<E> {
         remove(entry)
         return this
     }
 
-    override fun minus(entries: Collection<TimeseriesEntry<E>>): Timeseries<E> {
+    override fun minus(entries: Collection<TimeseriesEntry<E>>): MutableTimeseries<E> {
         remove(entries)
         return this
     }
 
-    override fun minus(eventInstant: Instant): Timeseries<E> {
+    override fun minus(eventInstant: Instant): MutableTimeseries<E> {
         remove(eventInstant)
         return this
     }

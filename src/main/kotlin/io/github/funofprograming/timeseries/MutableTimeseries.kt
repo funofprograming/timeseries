@@ -16,7 +16,7 @@ interface MutableTimeseries<E>: Timeseries<E> {
      *
      * @return This [MutableTimeseries]
      */
-    override fun plus(entry: TimeseriesEntry<E>, overwrite: Boolean): Timeseries<E>
+    override fun plus(entry: TimeseriesEntry<E>, overwrite: Boolean): MutableTimeseries<E>
 
     /**
      * Add `Collection` of entries to this [MutableTimeseries]
@@ -26,7 +26,7 @@ interface MutableTimeseries<E>: Timeseries<E> {
      *
      * @return This [MutableTimeseries]
      */
-    override fun plus(entries: Collection<TimeseriesEntry<E>>, overwrite: Boolean): Timeseries<E>
+    override fun plus(entries: Collection<TimeseriesEntry<E>>, overwrite: Boolean): MutableTimeseries<E>
 
     /**
      * Add an entry to this [MutableTimeseries]
@@ -65,7 +65,7 @@ interface MutableTimeseries<E>: Timeseries<E> {
      *
      * @return This [MutableTimeseries]
      */
-    override fun minus(entry: TimeseriesEntry<E>): Timeseries<E>
+    override fun minus(entry: TimeseriesEntry<E>): MutableTimeseries<E>
 
     /**
      * Remove `Collection` of entries from this [MutableTimeseries]
@@ -74,7 +74,7 @@ interface MutableTimeseries<E>: Timeseries<E> {
      *
      * @return This [MutableTimeseries]
      */
-    override fun minus(entries: Collection<TimeseriesEntry<E>>): Timeseries<E>
+    override fun minus(entries: Collection<TimeseriesEntry<E>>): MutableTimeseries<E>
 
     /**
      * Remove all entries for given instant from this [MutableTimeseries]
@@ -83,7 +83,7 @@ interface MutableTimeseries<E>: Timeseries<E> {
      *
      * @return This [MutableTimeseries]
      */
-    override fun minus(eventInstant: Instant): Timeseries<E>
+    override fun minus(eventInstant: Instant): MutableTimeseries<E>
 
     /**
      * Remove an entry from this [MutableTimeseries]
