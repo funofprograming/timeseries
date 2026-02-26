@@ -5,19 +5,20 @@ import org.junit.jupiter.api.Assertions.*
 import java.time.Instant
 import java.util.NavigableMap
 import java.util.TreeMap
+import java.util.UUID
 import kotlin.collections.containsKey
 
-class TestTimeseries {
+class TestMutableTimeseries {
 
     @Test
     fun testInitializeTimeseries_empty() {
-        val timeseries = timeseriesOf<Int>()
+        val timeseries = mutableTimeseriesOf<Int>()
         assertNotNull(timeseries)
     }
 
     @Test
     fun testInitializeTimeseries_oneEntry() {
-        val timeseries = timeseriesOf<Int>(timeseriesEntryOf(Instant.now(), 1))
+        val timeseries = mutableTimeseriesOf<Int>(timeseriesEntryOf(Instant.now(), 1))
         assertNotNull(timeseries)
         assertEquals(1, timeseries.countInstants())
         assertEquals(1, timeseries.countEvents())
@@ -25,12 +26,12 @@ class TestTimeseries {
 
     @Test
     fun testInitializeTimeseries_entryCollection_differentTime() {
-        val timeseries = timeseriesOf<Int>(
+        val timeseries = mutableTimeseriesOf<Int>(
             setOf(
                 timeseriesEntryOf(Instant.now(), 1)
                 , timeseriesEntryOf(Instant.now(), 2)
                 , timeseriesEntryOf(Instant.now(), 3)
-        ))
+            ))
         assertNotNull(timeseries)
         assertEquals(3, timeseries.countInstants())
         assertEquals(3, timeseries.countEvents())
@@ -39,7 +40,7 @@ class TestTimeseries {
     @Test
     fun testInitializeTimeseries_entryCollection_sameTime() {
         val instant = Instant.now()
-        val timeseries = timeseriesOf<Int>(
+        val timeseries = mutableTimeseriesOf<Int>(
             setOf(
                 timeseriesEntryOf(instant, 1)
                 , timeseriesEntryOf(instant, 2)
@@ -60,7 +61,7 @@ class TestTimeseries {
         )
         val timeseriesEntryMap = TreeMap<Instant, Collection<TimeseriesEntry<Int>>>()
         timeseriesEntryMap[instant] = timeseriesEntrySet
-        val timeseries = timeseriesOf<Int>(timeseriesEntryMap)
+        val timeseries = mutableTimeseriesOf<Int>(timeseriesEntryMap)
 
         assertNotNull(timeseries)
         assertEquals(1, timeseries.countInstants())
@@ -70,7 +71,7 @@ class TestTimeseries {
     @Test
     fun testInitializeTimeseries_copy() {
         val instant = Instant.now()
-        val timeseries = timeseriesOf<Int>(
+        val timeseries = mutableTimeseriesOf<Int>(
             setOf(
                 timeseriesEntryOf(instant, 1)
                 , timeseriesEntryOf(instant, 2)
@@ -80,7 +81,7 @@ class TestTimeseries {
         assertEquals(1, timeseries.countInstants())
         assertEquals(3, timeseries.countEvents())
 
-        val timeseriesCopy = timeseriesOf(timeseries)
+        val timeseriesCopy = mutableTimeseriesOf(timeseries)
         assertNotNull(timeseriesCopy)
         assertFalse { timeseriesCopy === timeseries } //different objects
         assertTrue { timeseriesCopy == timeseries } //same entries
@@ -90,14 +91,14 @@ class TestTimeseries {
 
     @Test
     fun testPlus_singleEntry_overwriteFalse() {
-        val timeseries = timeseriesOf<Int>(timeseriesEntryOf(Instant.now(), 1))
+        val timeseries = mutableTimeseriesOf<Int>(timeseriesEntryOf(Instant.now(), 1))
         assertNotNull(timeseries)
         assertEquals(1, timeseries.countInstants())
         assertEquals(1, timeseries.countEvents())
         val timeseries2 = timeseries.plus((timeseriesEntryOf(Instant.now(), 2)), false)
         assertNotNull(timeseries2)
-        assertFalse { timeseries2 === timeseries } //different objects
-        assertFalse { timeseries2 == timeseries } //different objects
+        assertTrue { timeseries2 === timeseries } //same objects
+        assertTrue { timeseries2 == timeseries } //same objects
         assertEquals(2, timeseries2.countInstants())
         assertEquals(2, timeseries2.countEvents())
     }
@@ -105,32 +106,32 @@ class TestTimeseries {
     @Test
     fun testPlus_singleEntry_overwriteTrue() {
         val instant = Instant.now()
-        val timeseries = timeseriesOf<Int>(timeseriesEntryOf(instant, 1))
+        val timeseries = mutableTimeseriesOf<Int>(timeseriesEntryOf(instant, 1))
         assertNotNull(timeseries)
         assertEquals(1, timeseries.countInstants())
         assertEquals(1, timeseries.countEvents())
         val timeseries2 = timeseries.plus((timeseriesEntryOf(instant, 1)))
         assertNotNull(timeseries2)
-        assertFalse { timeseries2 === timeseries } //different objects
-        assertTrue { timeseries2 == timeseries } //same entries because overwrite=true
+        assertTrue { timeseries2 === timeseries } //same objects
+        assertTrue { timeseries2 == timeseries } //same objects
         assertEquals(1, timeseries2.countInstants())
         assertEquals(1, timeseries2.countEvents())
     }
 
     @Test
     fun testPlus_collectionEntry_overwriteFalse() {
-        val timeseries = timeseriesOf<Int>(timeseriesEntryOf(Instant.now(), 1))
+        val timeseries = mutableTimeseriesOf<Int>(timeseriesEntryOf(Instant.now(), 1))
         assertNotNull(timeseries)
         assertEquals(1, timeseries.countInstants())
         assertEquals(1, timeseries.countEvents())
         val timeseries2 = timeseries.plus(setOf(
-                                                            timeseriesEntryOf(Instant.now(), 2)
-                                                            , timeseriesEntryOf(Instant.now(), 3)
-                                                            , timeseriesEntryOf(Instant.now(), 4))
-                                , false)
+            timeseriesEntryOf(Instant.now(), 2)
+            , timeseriesEntryOf(Instant.now(), 3)
+            , timeseriesEntryOf(Instant.now(), 4))
+            , false)
         assertNotNull(timeseries2)
-        assertFalse { timeseries2 === timeseries } //different objects
-        assertFalse { timeseries2 == timeseries } //different objects
+        assertTrue { timeseries2 === timeseries } //same objects
+        assertTrue { timeseries2 == timeseries } //same objects
         assertEquals(4, timeseries2.countInstants())
         assertEquals(4, timeseries2.countEvents())
     }
@@ -138,28 +139,92 @@ class TestTimeseries {
     @Test
     fun testPlus_collectionEntry_overwriteTrue() {
         val instant = Instant.now()
-        val timeseries = timeseriesOf<Int>(setOf(
-                                                            timeseriesEntryOf(instant, 2)
-                                                            , timeseriesEntryOf(instant, 3)
-                                                            , timeseriesEntryOf(instant, 4)))
+        val timeseries = mutableTimeseriesOf<Int>(setOf(
+            timeseriesEntryOf(instant, 2)
+            , timeseriesEntryOf(instant, 3)
+            , timeseriesEntryOf(instant, 4)))
         assertNotNull(timeseries)
         assertEquals(1, timeseries.countInstants())
         assertEquals(3, timeseries.countEvents())
         val timeseries2 = timeseries.plus(setOf(
-                                                            timeseriesEntryOf(instant, 2)
-                                                            , timeseriesEntryOf(instant, 5)
-                                                            , timeseriesEntryOf(instant, 6)))
+            timeseriesEntryOf(instant, 2)
+            , timeseriesEntryOf(instant, 5)
+            , timeseriesEntryOf(instant, 6)))
         assertNotNull(timeseries2)
-        assertFalse { timeseries2 === timeseries } //different objects
-        assertFalse { timeseries2 == timeseries } //different objects
+        assertTrue { timeseries2 === timeseries } //same objects
+        assertTrue { timeseries2 == timeseries } //same objects
         assertEquals(1, timeseries2.countInstants())
         assertEquals(5, timeseries2.countEvents()) //one entry is overwritten so total 5 events instead of 6
     }
 
     @Test
+    fun testAdd_singleEntry_overwriteFalse() {
+        val timeseries = mutableTimeseriesOf<Int>(timeseriesEntryOf(Instant.now(), 1))
+        assertNotNull(timeseries)
+        assertEquals(1, timeseries.countInstants())
+        assertEquals(1, timeseries.countEvents())
+        val uuid = timeseries.add((timeseriesEntryOf(Instant.now(), 2)), false)
+        assertNotNull(uuid)
+        assertEquals(2, timeseries.countInstants())
+        assertEquals(2, timeseries.countEvents())
+    }
+
+    @Test
+    fun testAdd_singleEntry_overwriteTrue() {
+        val instant = Instant.now()
+        val timeseries = mutableTimeseriesOf<Int>(timeseriesEntryOf(instant, 1))
+        assertNotNull(timeseries)
+        assertEquals(1, timeseries.countInstants())
+        assertEquals(1, timeseries.countEvents())
+        val uuid = timeseries.add((timeseriesEntryOf(instant, 1)))
+        assertNotNull(uuid)
+        assertEquals(1, timeseries.countInstants())
+        assertEquals(1, timeseries.countEvents())
+    }
+
+    @Test
+    fun testAdd_collectionEntry_overwriteFalse() {
+        val timeseries = mutableTimeseriesOf<Int>(timeseriesEntryOf(Instant.now(), 1))
+        assertNotNull(timeseries)
+        assertEquals(1, timeseries.countInstants())
+        assertEquals(1, timeseries.countEvents())
+        val uuids = timeseries.add(setOf(
+            timeseriesEntryOf(Instant.now(), 2)
+            , timeseriesEntryOf(Instant.now(), 3)
+            , timeseriesEntryOf(Instant.now(), 4))
+            , false)
+        assertNotNull(uuids)
+        assertTrue { uuids.isNotEmpty() }
+        assertEquals(3, uuids.size)
+        assertEquals(4, timeseries.countInstants())
+        assertEquals(4, timeseries.countEvents())
+    }
+
+    @Test
+    fun testAdd_collectionEntry_overwriteTrue() {
+        val instant = Instant.now()
+        val timeseries = mutableTimeseriesOf<Int>(setOf(
+            timeseriesEntryOf(instant, 2)
+            , timeseriesEntryOf(instant, 3)
+            , timeseriesEntryOf(instant, 4)))
+        assertNotNull(timeseries)
+        assertEquals(1, timeseries.countInstants())
+        assertEquals(3, timeseries.countEvents())
+        val uuids = timeseries.add(setOf(
+            timeseriesEntryOf(instant, 2)
+            , timeseriesEntryOf(instant, 5)
+            , timeseriesEntryOf(instant, 6)))
+        assertNotNull(uuids)
+        assertTrue { uuids.isNotEmpty() }
+        assertEquals(3, uuids.size)
+        assertEquals(1, timeseries.countInstants())
+        assertEquals(5, timeseries.countEvents()) //one entry is overwritten so total 5 events instead of 6
+    }
+
+    @Test
     fun testGet() {
         val instant = Instant.now()
-        val timeseries = timeseriesOf<Int>(setOf(
+        val timeseries = mutableTimeseriesOf<Int>(setOf(
             timeseriesEntryOf(instant, 2)
             , timeseriesEntryOf(instant, 3)
             , timeseriesEntryOf(instant, 4)))
@@ -183,7 +248,7 @@ class TestTimeseries {
     @Test
     fun testGetAll() {
         val instant = Instant.now()
-        val timeseries = timeseriesOf<Int>(setOf(
+        val timeseries = mutableTimeseriesOf<Int>(setOf(
             timeseriesEntryOf(instant, 2)
             , timeseriesEntryOf(instant, 3)
             , timeseriesEntryOf(instant, 4)))
@@ -201,9 +266,9 @@ class TestTimeseries {
     }
 
     @Test
-    fun getAllInstants() {
+    fun testGetAllInstants() {
         val instant = Instant.now()
-        val timeseries = timeseriesOf<Int>(setOf(
+        val timeseries = mutableTimeseriesOf<Int>(setOf(
             timeseriesEntryOf(instant, 2)
             , timeseriesEntryOf(instant, 3)
             , timeseriesEntryOf(instant, 4)))
@@ -218,9 +283,22 @@ class TestTimeseries {
     }
 
     @Test
+    fun testGet_instant_eventId() {
+        val instant = Instant.now()
+        val timeseries = mutableTimeseriesOf<Int>()
+        val uuids = timeseries.add(setOf(
+            timeseriesEntryOf(instant, 2)
+            , timeseriesEntryOf(instant, 5)
+            , timeseriesEntryOf(instant, 6)))
+        val entry = timeseries.get(instant, uuids.first())
+        assertNotNull(entry)
+        assertEquals(2, entry?.event ?: null)
+    }
+
+    @Test
     fun testMinus_singleEntry() {
         val instant = Instant.now()
-        val timeseries = timeseriesOf<Int>(setOf(
+        val timeseries = mutableTimeseriesOf<Int>(setOf(
             timeseriesEntryOf(instant, 2)
             , timeseriesEntryOf(instant, 3)
             , timeseriesEntryOf(instant, 4)))
@@ -229,13 +307,13 @@ class TestTimeseries {
         assertEquals(3, timeseries.countEvents())
         val timeseries2 = timeseries.minus((timeseriesEntryOf(instant, 1)))
         assertNotNull(timeseries2)
-        assertFalse { timeseries2 === timeseries } //different objects
-        assertTrue { timeseries2 == timeseries } //same entries because minus entry does not exist
+        assertTrue { timeseries2 === timeseries } //same objects
+        assertTrue { timeseries2 == timeseries } //same objects
         assertEquals(1, timeseries2.countInstants())
         assertEquals(3, timeseries2.countEvents())
         val timeseries3 = timeseries.minus((timeseriesEntryOf(instant, 2)))
-        assertFalse { timeseries3 === timeseries } //different objects
-        assertFalse { timeseries3 == timeseries } //different objects
+        assertTrue { timeseries3 === timeseries } //same objects
+        assertTrue { timeseries3 == timeseries } //same objects
         assertEquals(1, timeseries3.countInstants())
         assertEquals(2, timeseries3.countEvents())
     }
@@ -243,7 +321,7 @@ class TestTimeseries {
     @Test
     fun testMinus_collectionEntry() {
         val instant = Instant.now()
-        val timeseries = timeseriesOf<Int>(setOf(
+        val timeseries = mutableTimeseriesOf<Int>(setOf(
             timeseriesEntryOf(instant, 2)
             , timeseriesEntryOf(instant, 3)
             , timeseriesEntryOf(instant, 4)))
@@ -254,14 +332,14 @@ class TestTimeseries {
             timeseriesEntryOf(instant, 1)
             , timeseriesEntryOf(instant, 7)))
         assertNotNull(timeseries2)
-        assertFalse { timeseries2 === timeseries } //different objects
-        assertTrue { timeseries2 == timeseries } //same entries because minus entry does not exist
+        assertTrue { timeseries2 === timeseries } //same objects
+        assertTrue { timeseries2 == timeseries } //same objects
         assertEquals(1, timeseries2.countInstants())
         assertEquals(3, timeseries2.countEvents())
         val timeseries3 = timeseries.minus(setOf(timeseriesEntryOf(instant, 2)
-                                                            , timeseriesEntryOf(instant, 3)))
-        assertFalse { timeseries3 === timeseries } //different objects
-        assertFalse { timeseries3 == timeseries } //different objects
+            , timeseriesEntryOf(instant, 3)))
+        assertTrue { timeseries3 === timeseries } //same objects
+        assertTrue { timeseries3 == timeseries } //same objects
         assertEquals(1, timeseries3.countInstants())
         assertEquals(1, timeseries3.countEvents())
     }
@@ -269,7 +347,7 @@ class TestTimeseries {
     @Test
     fun testMinus_instant() {
         val instant = Instant.now()
-        val timeseries = timeseriesOf<Int>(setOf(
+        val timeseries = mutableTimeseriesOf<Int>(setOf(
             timeseriesEntryOf(instant, 2)
             , timeseriesEntryOf(instant, 3)
             , timeseriesEntryOf(instant, 4)))
@@ -278,21 +356,105 @@ class TestTimeseries {
         assertEquals(3, timeseries.countEvents())
         val timeseries2 = timeseries.minus(Instant.EPOCH)
         assertNotNull(timeseries2)
-        assertFalse { timeseries2 === timeseries } //different objects
-        assertTrue { timeseries2 == timeseries } //same entries because minus entry does not exist
+        assertTrue { timeseries2 === timeseries } //same objects
+        assertTrue { timeseries2 == timeseries } //same objects
         assertEquals(1, timeseries2.countInstants())
         assertEquals(3, timeseries2.countEvents())
         val timeseries3 = timeseries.minus(instant)
-        assertFalse { timeseries3 === timeseries } //different objects
-        assertFalse { timeseries3 == timeseries } //different objects
+        assertTrue { timeseries3 === timeseries } //same objects
+        assertTrue { timeseries3 == timeseries } //same objects
         assertEquals(0, timeseries3.countInstants())
         assertEquals(0, timeseries3.countEvents())
     }
 
     @Test
+    fun testRemove_singleEntry() {
+        val instant = Instant.now()
+        val timeseries = mutableTimeseriesOf<Int>(setOf(
+            timeseriesEntryOf(instant, 2)
+            , timeseriesEntryOf(instant, 3)
+            , timeseriesEntryOf(instant, 4)))
+        assertNotNull(timeseries)
+        assertEquals(1, timeseries.countInstants())
+        assertEquals(3, timeseries.countEvents())
+        val removed = timeseries.remove((timeseriesEntryOf(instant, 1)))
+        assertNotNull(removed)
+        assertFalse { removed }
+        assertEquals(1, timeseries.countInstants())
+        assertEquals(3, timeseries.countEvents())
+        val removed2 = timeseries.remove((timeseriesEntryOf(instant, 2)))
+        assertNotNull(removed)
+        assertTrue { removed2 }
+        assertEquals(1, timeseries.countInstants())
+        assertEquals(2, timeseries.countEvents())
+    }
+
+    @Test
+    fun testRemove_collectionEntry() {
+        val instant = Instant.now()
+        val timeseries = mutableTimeseriesOf<Int>(setOf(
+            timeseriesEntryOf(instant, 2)
+            , timeseriesEntryOf(instant, 3)
+            , timeseriesEntryOf(instant, 4)))
+        assertNotNull(timeseries)
+        assertEquals(1, timeseries.countInstants())
+        assertEquals(3, timeseries.countEvents())
+        val removed = timeseries.remove(setOf(
+            timeseriesEntryOf(instant, 1)
+            , timeseriesEntryOf(instant, 7)))
+        assertNotNull(removed)
+        assertFalse { removed }
+        assertEquals(1, timeseries.countInstants())
+        assertEquals(3, timeseries.countEvents())
+        val removed2 = timeseries.remove(setOf(timeseriesEntryOf(instant, 2)
+            , timeseriesEntryOf(instant, 3)))
+        assertNotNull(removed)
+        assertTrue { removed2 }
+        assertEquals(1, timeseries.countInstants())
+        assertEquals(1, timeseries.countEvents())
+    }
+
+    @Test
+    fun testRemove_instant() {
+        val instant = Instant.now()
+        val timeseries = mutableTimeseriesOf<Int>(setOf(
+            timeseriesEntryOf(instant, 2)
+            , timeseriesEntryOf(instant, 3)
+            , timeseriesEntryOf(instant, 4)))
+        assertNotNull(timeseries)
+        assertEquals(1, timeseries.countInstants())
+        assertEquals(3, timeseries.countEvents())
+        val removed = timeseries.remove(Instant.EPOCH)
+        assertNotNull(removed)
+        assertFalse { removed }
+        assertEquals(1, timeseries.countInstants())
+        assertEquals(3, timeseries.countEvents())
+        val removed2 = timeseries.remove(instant)
+        assertNotNull(removed)
+        assertTrue { removed2 }
+        assertEquals(0, timeseries.countInstants())
+        assertEquals(0, timeseries.countEvents())
+    }
+
+    @Test
+    fun testClear() {
+        val instant = Instant.now()
+        val timeseries = mutableTimeseriesOf<Int>(setOf(
+            timeseriesEntryOf(instant, 2)
+            , timeseriesEntryOf(instant, 3)
+            , timeseriesEntryOf(instant, 4)))
+        assertNotNull(timeseries)
+        assertEquals(1, timeseries.countInstants())
+        assertEquals(3, timeseries.countEvents())
+        timeseries.clear()
+        assertEquals(0, timeseries.countInstants())
+        assertEquals(0, timeseries.countEvents())
+    }
+
+    @Test
     fun testContains_instant() {
         val instant = Instant.now()
-        val timeseries = timeseriesOf<Int>(
+        val timeseries = mutableTimeseriesOf<Int>(
             setOf(
                 timeseriesEntryOf(instant, 2)
                 , timeseriesEntryOf(instant, 3)
@@ -309,7 +471,7 @@ class TestTimeseries {
     @Test
     fun testContains_event() {
         val instant = Instant.now()
-        val timeseries = timeseriesOf<Int>(
+        val timeseries = mutableTimeseriesOf<Int>(
             setOf(
                 timeseriesEntryOf(instant, 2)
                 , timeseriesEntryOf(instant, 3)
@@ -324,9 +486,27 @@ class TestTimeseries {
     }
 
     @Test
+    fun testContains_eventId() {
+        val instant = Instant.now()
+        val timeseries = mutableTimeseriesOf<Int>(
+            setOf(
+                timeseriesEntryOf(instant, 2)
+                , timeseriesEntryOf(instant, 3)
+                , timeseriesEntryOf(instant, 4)
+            )
+        )
+        assertNotNull(timeseries)
+        assertEquals(1, timeseries.countInstants())
+        assertEquals(3, timeseries.countEvents())
+        val uuid = timeseries.add(timeseriesEntryOf(instant, 5))
+        assertTrue { timeseries.contains(uuid) }
+        assertFalse { timeseries.contains(UUID.randomUUID()) }
+    }
+
+    @Test
     fun testCountInstants() {
         val instant = Instant.now()
-        val timeseries = timeseriesOf<Int>(
+        val timeseries = mutableTimeseriesOf<Int>(
             setOf(
                 timeseriesEntryOf(instant, 2)
                 , timeseriesEntryOf(instant, 3)
@@ -341,7 +521,7 @@ class TestTimeseries {
     @Test
     fun testCountEvents() {
         val instant = Instant.now()
-        val timeseries = timeseriesOf<Int>(
+        val timeseries = mutableTimeseriesOf<Int>(
             setOf(
                 timeseriesEntryOf(instant, 2)
                 , timeseriesEntryOf(instant, 3)
@@ -356,7 +536,7 @@ class TestTimeseries {
     @Test
     fun testIsEmpty() {
         val instant = Instant.now()
-        val timeseries = timeseriesOf<Int>(
+        val timeseries = mutableTimeseriesOf<Int>(
             setOf(
                 timeseriesEntryOf(instant, 2)
                 , timeseriesEntryOf(instant, 3)
@@ -365,7 +545,7 @@ class TestTimeseries {
         )
         assertNotNull(timeseries)
         assertFalse { timeseries.isEmpty() }
-        val timeseries2 = timeseriesOf<Int>()
+        val timeseries2 = mutableTimeseriesOf<Int>()
         assertNotNull(timeseries2)
         assertTrue { timeseries2.isEmpty() }
     }
@@ -373,7 +553,7 @@ class TestTimeseries {
     @Test
     fun testIsNotEmpty() {
         val instant = Instant.now()
-        val timeseries = timeseriesOf<Int>(
+        val timeseries = mutableTimeseriesOf<Int>(
             setOf(
                 timeseriesEntryOf(instant, 2)
                 , timeseriesEntryOf(instant, 3)
@@ -382,7 +562,7 @@ class TestTimeseries {
         )
         assertNotNull(timeseries)
         assertTrue { timeseries.isNotEmpty() }
-        val timeseries2 = timeseriesOf<Int>()
+        val timeseries2 = mutableTimeseriesOf<Int>()
         assertNotNull(timeseries2)
         assertFalse { timeseries2.isNotEmpty() }
     }
@@ -392,7 +572,7 @@ class TestTimeseries {
         val instant1 = Instant.parse("2024-01-01T00:00:00Z")
         val instant2 = Instant.parse("2024-01-02T00:00:00Z")
         val instant3 = Instant.parse("2024-01-03T00:00:00Z")
-        val timeseries = timeseriesOf<Int>(setOf(
+        val timeseries = mutableTimeseriesOf<Int>(setOf(
             timeseriesEntryOf(instant1, 1),
             timeseriesEntryOf(instant2, 2),
             timeseriesEntryOf(instant3, 3)
@@ -411,7 +591,7 @@ class TestTimeseries {
         val instant1 = Instant.parse("2024-01-01T00:00:00Z")
         val instant2 = Instant.parse("2024-01-02T00:00:00Z")
         val instant3 = Instant.parse("2024-01-03T00:00:00Z")
-        val timeseries = timeseriesOf<Int>(setOf(
+        val timeseries = mutableTimeseriesOf<Int>(setOf(
             timeseriesEntryOf(instant1, 1),
             timeseriesEntryOf(instant2, 2),
             timeseriesEntryOf(instant3, 3)
@@ -430,7 +610,7 @@ class TestTimeseries {
         val instant1 = Instant.parse("2024-01-01T00:00:00Z")
         val instant2 = Instant.parse("2024-01-02T00:00:00Z")
         val instant3 = Instant.parse("2024-01-03T00:00:00Z")
-        val timeseries = timeseriesOf<Int>(setOf(
+        val timeseries = mutableTimeseriesOf<Int>(setOf(
             timeseriesEntryOf(instant1, 1),
             timeseriesEntryOf(instant2, 2),
             timeseriesEntryOf(instant3, 3)
@@ -449,7 +629,7 @@ class TestTimeseries {
         val instant1 = Instant.parse("2024-01-01T00:00:00Z")
         val instant2 = Instant.parse("2024-01-02T00:00:00Z")
         val instant3 = Instant.parse("2024-01-03T00:00:00Z")
-        val timeseries = timeseriesOf<Int>(setOf(
+        val timeseries = mutableTimeseriesOf<Int>(setOf(
             timeseriesEntryOf(instant1, 1),
             timeseriesEntryOf(instant2, 2),
             timeseriesEntryOf(instant3, 3)
@@ -468,7 +648,7 @@ class TestTimeseries {
         val instant1 = Instant.parse("2024-01-01T00:00:00Z")
         val instant2 = Instant.parse("2024-01-02T00:00:00Z")
         val instant3 = Instant.parse("2024-01-03T00:00:00Z")
-        val timeseries = timeseriesOf<Int>(setOf(
+        val timeseries = mutableTimeseriesOf<Int>(setOf(
             timeseriesEntryOf(instant1, 1),
             timeseriesEntryOf(instant2, 2),
             timeseriesEntryOf(instant3, 3)
@@ -487,7 +667,7 @@ class TestTimeseries {
         val instant1 = Instant.parse("2024-01-01T00:00:00Z")
         val instant2 = Instant.parse("2024-01-02T00:00:00Z")
         val instant3 = Instant.parse("2024-01-03T00:00:00Z")
-        val timeseries = timeseriesOf<Int>(setOf(
+        val timeseries = mutableTimeseriesOf<Int>(setOf(
             timeseriesEntryOf(instant1, 1),
             timeseriesEntryOf(instant2, 2),
             timeseriesEntryOf(instant3, 3)
@@ -506,7 +686,7 @@ class TestTimeseries {
         val instant1 = Instant.parse("2024-01-01T00:00:00Z")
         val instant2 = Instant.parse("2024-01-02T00:00:00Z")
         val instant3 = Instant.parse("2024-01-03T00:00:00Z")
-        val timeseries = timeseriesOf<Int>(setOf(
+        val timeseries = mutableTimeseriesOf<Int>(setOf(
             timeseriesEntryOf(instant3, 3),
             timeseriesEntryOf(instant1, 1),
             timeseriesEntryOf(instant2, 2)
@@ -520,7 +700,7 @@ class TestTimeseries {
 
     @Test
     fun testStart_empty() {
-        val timeseries = timeseriesOf<Int>()
+        val timeseries = mutableTimeseriesOf<Int>()
         val startEntries = timeseries.start()
         assertNull(startEntries)
     }
@@ -530,7 +710,7 @@ class TestTimeseries {
         val instant1 = Instant.parse("2024-01-01T00:00:00Z")
         val instant2 = Instant.parse("2024-01-02T00:00:00Z")
         val instant3 = Instant.parse("2024-01-03T00:00:00Z")
-        val timeseries = timeseriesOf<Int>(setOf(
+        val timeseries = mutableTimeseriesOf<Int>(setOf(
             timeseriesEntryOf(instant1, 1),
             timeseriesEntryOf(instant3, 3),
             timeseriesEntryOf(instant2, 2)
@@ -544,7 +724,7 @@ class TestTimeseries {
 
     @Test
     fun testEnd_empty() {
-        val timeseries = timeseriesOf<Int>()
+        val timeseries = mutableTimeseriesOf<Int>()
         val endEntries = timeseries.end()
         assertNull(endEntries)
     }
@@ -554,7 +734,7 @@ class TestTimeseries {
         val instant1 = Instant.parse("2024-01-01T00:00:00Z")
         val instant2 = Instant.parse("2024-01-02T00:00:00Z")
         val instant3 = Instant.parse("2024-01-03T00:00:00Z")
-        val timeseries = timeseriesOf<Int>(setOf(
+        val timeseries = mutableTimeseriesOf<Int>(setOf(
             timeseriesEntryOf(instant3, 3),
             timeseriesEntryOf(instant1, 1),
             timeseriesEntryOf(instant2, 2)
@@ -581,7 +761,7 @@ class TestTimeseries {
         val instant1 = Instant.parse("2024-01-01T00:00:00Z")
         val instant2 = Instant.parse("2024-01-02T00:00:00Z")
         val instant3 = Instant.parse("2024-01-03T00:00:00Z")
-        val timeseries = timeseriesOf<Int>(
+        val timeseries = mutableTimeseriesOf<Int>(
             setOf(
                 timeseriesEntryOf(instant1, 1),
                 timeseriesEntryOf(instant3, 3),
