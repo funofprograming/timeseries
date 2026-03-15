@@ -1,12 +1,13 @@
 package io.github.funofprograming.timeseries;
 
 import org.junit.jupiter.api.Test;
+
 import java.time.Instant;
 import java.util.*;
 
+import static io.github.funofprograming.timeseries.TimeseriesBuildersKt.mutableTimeseriesOf;
+import static io.github.funofprograming.timeseries.TimeseriesBuildersKt.timeseriesEntryOf;
 import static org.junit.jupiter.api.Assertions.*;
-// Assuming these are the static imports for the factory methods defined in Kotlin
-import static io.github.funofprograming.timeseries.TimeseriesBuildersKt.*;
 
 class TestJavaMutableTimeseries {
 
@@ -139,7 +140,7 @@ class TestJavaMutableTimeseries {
     void testGet_instant_eventId() {
         Instant instant = Instant.now();
         MutableTimeseries<Integer> timeseries = mutableTimeseriesOf();
-        Set<TimeseriesEntry<Integer>> entries = new HashSet<>(Arrays.asList(
+        Set<TimeseriesEntry<Integer>> entries = new LinkedHashSet<>(Arrays.asList(
                 timeseriesEntryOf(instant, 2, null),
                 timeseriesEntryOf(instant, 5, null)
         ));
