@@ -1,0 +1,97 @@
+name: Release from master
+run-name: Release from master
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  Release:
+    runs-on: ubuntu-latest
+    if: ${{ !contains(github.event.head_commit.message, 'post-release-update') }}
+    steps:
+      - run: echo "The job was automatically triggered by a ${{ github.event_name }} event with commit message ${{ github.event.head_commit.message }}."
+      - name: Set up JDK 21 for x64
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          architecture: x64
+
+      - name: Checkout branch master
+        uses: actions/checkout@v4
+        with:
+          ref: 'master'
+
+      - name: Fetch cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
+
+      - name: Git config setup
+        run: |
+          git config user.email "github-action@users.noreply.github.com"
+          git config user.name "GitHub Action"
+          git config user.password "${{ secrets.GITHUB_TOKEN }}"
+          echo "GIT_USER=${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
+          echo "GH_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
+
+      - name: Find release version
+        run: |
+          mvn build-helper:parse-version versions:set@release --settings settings.xml --activate-profiles ci
+          echo "version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> "$GITHUB_ENV"
+
+      - name: Prepare a release branch
+        run: |
+          git checkout -b release/$version
+          git add -A
+          git commit -m "Release version $version"
+
+      - name: Build and publish to maven central
+        env:
+          FOP_SIGN_GPG_KEY: ${{ secrets.FOP_SIGN_GPG_KEY }}
+          FOP_SIGN_GPG_PASS: ${{ secrets.FOP_SIGN_GPG_PASS }}
+        run: |
+          mvn clean deploy --file pom.xml --batch-mode --settings settings.xml --activate-profiles ci
+
+      - name: Push the release branch
+        run: |
+          git push --force origin release/$version
+
+      - name: Tag the release
+        run: |
+          git tag -a v$version -m "Release version $version"
+          git push --force origin v$version
+
+      - name: Create a Github release from tag
+        run: |
+          gh release create v$version --verify-tag --title "Release version $version" --notes "Release version $version" --draft
+
+      - name: Post release PR in master from release branch
+        run: |
+          git checkout release/$version
+          gh pr create --base master --title "post-release-update" --body "post-release-update. Created by Github Action." --reviewer funofprograming
+
+
+  Post-Release:
+    runs-on: ubuntu-latest
+    if: ${{ contains(github.event.head_commit.message, 'post-release-update') }}
+    steps:
+      - run: echo "The job was automatically triggered by a ${{ github.event_name }} event with commit message ${{ github.event.head_commit.message }}."
+      - name: Set up JDK 21 for x64
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          architecture: x64
+
+      - name: Checkout branch master
+        uses: actions/checkout@v4
+        with:
+          ref: 'master'
+
+      - name: Post release PR in develop from master branch
+        run: gh pr create --base develop --title "post-release-update" --body "post-release-update. Created by Github Action." --reviewer funofprograming
